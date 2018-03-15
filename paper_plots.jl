@@ -45,7 +45,8 @@ function recovery_plots(dataset::String, full::Bool=false)
     ax = gca()    
     ax[:tick_params]("both", labelsize=fsz-3, length=4, width=1.25)
     if dataset == "email-Enron"
-        legend(fontsize=fsz-2, frameon=false, bbox_to_anchor=(0.25, 0.3), ncol=2, columnspacing=0.5, labelspacing=0.0)
+        legend(fontsize=fsz-2, frameon=false, bbox_to_anchor=(0.25, 0.3),
+               ncol=2, columnspacing=0.5, labelspacing=0.0)
     end
     xlabel("Days", fontsize=fsz)
     ylabel("Precision at core size", fontsize=fsz)
@@ -65,16 +66,18 @@ function recovery_plots(dataset::String, full::Bool=false)
     ax = gca()    
     ax[:tick_params]("both", labelsize=fsz-3, length=4, width=1.25)
     if dataset == "email-Enron"
-        legend(fontsize=fsz-2, frameon=false, bbox_to_anchor=(0.25, 0.3), ncol=2, columnspacing=0.5, labelspacing=0.0)
+        legend(fontsize=fsz-2, frameon=false, bbox_to_anchor=(0.25, 0.3),
+               ncol=2, columnspacing=0.5, labelspacing=0.0)
     end
     xlabel("Days", fontsize=fsz)
     ylabel("Area under P-R curve", fontsize=fsz)
     title(dataset, fontsize=fsz)
 
+    # Network statistics
+    subplot(133)
     core_present = data["frac_core"] * data["ncore"]
     nodes_present = data["frac_nodes"] * data["nnodes"]
     frac_in_core = core_present ./ nodes_present
-    subplot(133)
     plot(days, data["frac_core"],  color="#e41a1c", lw=2.0, linestyle="-",  label="core nodes")
     plot(days, data["frac_nodes"], color="#377eb8", lw=1.0, linestyle="-",  label="total nodes")
     plot(days, data["frac_edges"], color="#4daf4a", lw=1.5, linestyle=":",  label="total edges")
@@ -107,6 +110,8 @@ neighborhoods_plot(dataset::String)
 
 Input parameters:
 - dataset::String: dataset name
+
+Produces file $dataset-neighborhoods.png.
 """
 function neighborhoods_plot(dataset::String)
     close()
