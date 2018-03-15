@@ -9,7 +9,7 @@ minimum_VC_size
 
 Use integer programming formulation to find the minimum vertex cover size.
 
-minimum_VC_size(A::SpIntMat, upper_bound::Int64)
+size = minimum_VC_size(A::SpIntMat, upper_bound::Int64)
 
 Input parameters:
 - A::SpIntMat: adjacency matrix of simple undirected graph

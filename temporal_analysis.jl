@@ -6,13 +6,27 @@ using MAT
 using ScikitLearn
 @sk_import metrics: average_precision_score
 
-function noniso_core(core::Vector{Int64}, A::SpIntMat)
-    d = vec(sum(A, 2))
-    inds = find(d[core] .> 0)
-    return core[inds]
-end
+"""
+recovery_over_time(dataset::String, interval_in_days::Int64=10)
+---------------------
 
-function evaluate(dataset::String)
+Computes the precision at core size, area under the 
+
+using the following algorithms:
+- Union of minimal verex covers (UMVC)
+- Degree ordering
+- Betweenness centrality score ordering
+- Borgatti & Everret core scores
+
+recovery_over_time(dataset::String, interval_in_days::Int64=10)
+
+Input parameters:
+- dataset::String: dataset name
+- interval_in_days::Int64: sampling interval
+
+stores results in output/$dataset-temporal-perf-stats.mat
+"""
+function recovery_over_time(dataset::String, interval_in_days::Int64=10)
     srand(1234)  # for consistency
     
     TD = read_temporal_data(dataset)
@@ -23,10 +37,9 @@ function evaluate(dataset::String)
     nc = length(core)
     
     total_days = (maximum(TD.times) - minimum(TD.times)) / 86400
-    interval_in_days = 10
-    ten_day_incr = 10.0 / total_days
+    increment = interval_in_days / total_days
     
-    ps = collect(ten_day_incr:ten_day_incr:1.0)
+    ps = collect(increment:increment:1.0)
     np = length(ps)
 
     perf_deg_pacs = zeros(Float64, np)
@@ -52,19 +65,17 @@ function evaluate(dataset::String)
     Threads.@threads for ii = 1:length(shuffled_inds)
         i = shuffled_inds[ii]
         p = ps[i]
-        day = i * 5
-        total_days = np * 5
         if Threads.threadid() == 1
             print("$(ii) of $(np)... \r")
             flush(STDOUT)
         end
         # Collect data and scores
         Ap = TemporalData2SimpleGraph(quantiled_data(TD, p), n)
-        d, deg_order = degree_order(Ap)
-        mvc_scores, mvc_order = UMVC_order(Ap)
+        deg_order, d = degree_order(Ap)
+        mvc_order = UMVC_order(Ap)
         btw_order, btw_scores = betweenness_order(Ap)
         bev_order, bev_scores = BorgattiEverett(Ap)
-        ni_core = noniso_core(core, Ap)
+        non_iso_core = core[find(d[core] .> 0)]
 
         # precision @ core size
         end_ind = min(nc, size(Ap, 1))
@@ -130,56 +141,4 @@ function evaluate(dataset::String)
                   "btw_pacs"   => perf_btw_pacs,
                   "upb_pacs"   => perf_upb_pacs,
                   "bev_pacs"   => perf_bev_pacs,))
-end
-
-function umvc_evaluate(dataset::String)
-    srand(1234)  # for consistency
-    
-    TD = read_temporal_data(dataset)
-    A = TemporalData2SimpleGraph(TD)
-    n = size(A, 1)
-    core01 = read_temporal_core(dataset, n)
-    core = find(core01 .> 0)
-    nc = length(core)
-    
-    total_days = (maximum(TD.times) - minimum(TD.times)) / 86400
-    interval_in_days = 10
-    ten_day_incr = 10.0 / total_days
-    
-    ps = collect(ten_day_incr:ten_day_incr:1.0)
-    np = length(ps)
-    perf_mvc_pacs = zeros(Float64, np)
-    all_mvc_scores = zeros(Float64, length(core01), np)
-
-    shuffled_inds = shuffle(collect(1:np))
-    Threads.@threads for ii = 1:length(shuffled_inds)
-        i = shuffled_inds[ii]
-        p = ps[i]
-        if Threads.threadid() == 1
-            print("$(ii) of $(np)... \r")
-            flush(STDOUT)
-        end
-        # Collect data and scores
-        Ap = TemporalData2SimpleGraph(quantiled_data(TD, p), n)
-        mvc_order, mvc_scores = UMVC_order(Ap)
-
-        # precision @ core size
-        end_ind = min(nc, size(Ap, 1))
-        pacs(ord::Vector{Int64}) = length(intersect(ord[1:end_ind], core)) / nc
-        perf_mvc_pacs[i] = pacs(mvc_order)
-
-        # Store data to avoid threading issues
-        all_mvc_scores[:, i] = mvc_scores
-    end
-
-    perf_mvc_auprc = zeros(Float64, np)
-    for i = 1:np
-        perf_mvc_auprc[i] =
-            average_precision_score(core01, all_mvc_scores[:, i])
-    end
-
-    matwrite("output/$dataset-temporal-perf-UMVC-stats.mat",
-             Dict("ps"         => ps,
-                  "mvc_auprc"  => perf_mvc_auprc,
-                  "mvc_pacs"   => perf_mvc_pacs))
 end

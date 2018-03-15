@@ -1,11 +1,28 @@
 include("common.jl")
-using LightGraphs
 
-function UMVC_order(A::SpIntMat, num_iters::Int64=300)
+using LightGraphs  # for betweenness centrality
+
+"""
+UMVC_order
+----------
+
+Uses the union of minimal vertex cover algorithm to compute an ordering
+of nodes in terms of favorability of being in the core.
+
+order = UMVC_order(A::SpIntMat, ncovers::Int64=300)
+
+Input parameters:
+- A::SpIntMat: adjacency matrix
+- ncovers::Int64=300: number of minimal vertex covers to use
+
+returns an ordering of the nodes in decreasing favorability
+of including in the core
+"""
+function UMVC_order(A::SpIntMat, ncovers::Int64=300)
     edge_vec = [(i, j) for (i, j) in zip(findnz(A)[1:2]...) if i < j]
     n = size(A, 1)
     umvc_vec = zeros(Int64, n)
-    for _ in 1:num_iters
+    for _ in 1:ncovers
         # Run 2-approximation
         cover = zeros(Int64, n)
         edge_queue = copy(shuffle(edge_vec))
@@ -34,13 +51,73 @@ function UMVC_order(A::SpIntMat, num_iters::Int64=300)
             sort(find(umvc_vec .== 0), by=v->d[v], rev=true)]
 end
 
+"""
+degree_order
+------------
+
+Computes the ordering of nodes in terms of their degree.
+
+(order, d) = degree_order(A::SpIntMat)
+
+Input parameters:
+- A::SpIntMat: adjacency matrix
+
+returns an (order, degree) tuple of the order of the nodes by decreasing
+degree along with the actual degrees.
+"""
 function degree_order(A::SpIntMat)
     d = vec(sum(A, 2))
     n = size(A, 1)
     return (sort(collect(1:n), by=v->d[v], rev=true), d)
 end
 
-function BorgattiEverett_order(A::SpIntMat, max_iter::Int64=10000, tol::Float64=1e-10)
+"""
+betweenness_order(A::SpIntMat)
+------------
+
+Computes the ordering of nodes in terms of their betweenness centrality.
+
+(order, btw) = betweenness_order(A::SpIntMat)
+
+Input parameters:
+- A::SpIntMat: adjacency matrix
+
+returns an (orderg, scores) tuple of the order of the nodes by decreasing
+betweenness centrality score along with the actual centrality scores.
+"""
+function betweenness_order(A::SpIntMat)
+    G = SimpleGraph()
+    for i = 1:size(A, 1); add_vertex!(G); end
+    T = triu(A)
+    for i in 1:size(T, 2), j in nz_row_inds(T, i)
+        add_edge!(G, (i, j))
+    end
+    bw = betweenness_centrality(G)
+    n = size(A, 1)
+    return (sort(collect(1:n), by= v->bw[v], rev=true), bw)
+end
+
+"""
+BorgattiEverett_order
+---------------------
+
+Computes the ordering of nodes in terms of the score proposed in
+"Models of core/periphery structures", Borgatti & Everett, Social Networks, 2000.
+Uses the iterative algorithm from
+"The minimum residual method of factor analysis", Comrey, Psychological Reports, 1962.
+
+(order, core_scores) = BorgattiEverett_order(A::SpIntMat, max_iter::Int64=10000, tol::Float64=1e-10)
+
+Input parameters:
+- A::SpIntMat: adjacency matrix
+- max_iter::Int64: maximum number of iterations
+- tol::Float64: stopping tolerance of algorithm
+
+returns an (order, scores) tuple of the order of the nodes by decreasing
+betweenness centrality score along with the actual core scores.
+"""
+function BorgattiEverett_order(A::SpIntMat, max_iter::Int64=10000,
+                               tol::Float64=1e-10)
     n = size(A, 1)
     d = vec(sum(A, 2))
     c = rand(n)
@@ -56,16 +133,4 @@ function BorgattiEverett_order(A::SpIntMat, max_iter::Int64=10000, tol::Float64=
         if diff < tol; break; end
     end
     return (sort(collect(1:n), by= v -> c[v], rev=true), c)
-end
-
-function betweenness_order(A::SpIntMat)
-    G = SimpleGraph()
-    for i = 1:size(A, 1); add_vertex!(G); end
-    T = triu(A)
-    for i in 1:size(T, 2), j in nz_row_inds(T, i)
-        add_edge!(G, (i, j))
-    end
-    bw = betweenness_centrality(G)
-    n = size(A, 1)
-    return (sort(collect(1:n), by= v->bw[v], rev=true), bw)
 end

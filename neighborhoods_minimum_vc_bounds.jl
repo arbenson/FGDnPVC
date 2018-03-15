@@ -10,7 +10,7 @@ read_simple_graph_txt
 Read a simple, undirected, unweighted graph from a text file. 
 Example datasets are in the directory data/static/
 
-read_simple_graph_txt(dataset::String)
+(A, index_map) = read_simple_graph_txt(dataset::String)
 
 Input parameters:
 - dataset::String: name of dataset
@@ -61,7 +61,7 @@ Get approximation bounds from num_iters random initializations of the maximal
 matching 2-approximation for the minimum vertex cover problem on the undirected
 graph with adjacency matrix A.
 
-matching_approx_bounds(SpIntMat, num_iters::Int64=20)
+(u, l) = matching_approx_bounds(SpIntMat, num_iters::Int64=20)
 
 Input parameters:
 - SpIntMat: the adjacency matrix of an undirected graph
@@ -103,7 +103,7 @@ end
 
 """
 neighborhoods_minimum_VC_bounds
----------------------
+-------------------------------
 
 Collect bounds on the minimum vertex cover size of 1-hop neighborhood covers of
 2-hop neighborhoods (ego excluded).

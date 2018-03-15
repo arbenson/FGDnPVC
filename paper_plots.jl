@@ -1,6 +1,24 @@
 using MAT
 using PyPlot
 
+""" 
+recovery_plots
+--------------
+
+Makes a plot similar to those appearing in Figure 2 of the paper. This function
+relies on the file output/$dataset-temporal-perf-stats.mat, which is
+produced with the recovery_over_time() function.
+
+recovery_plots(dataset::String, full::Bool=false)
+
+Input parameters:
+- dataset::String: dataset name
+- full::Bool: if set to true, then uses pre-computed data which includes
+              belief propagation and Path-Core scores.
+
+Writes file $dataset-temporal.eps if full is false or $dataset-temporal-FULL.eps
+if full is set to true.
+"""
 function recovery_plots(dataset::String, full::Bool=false)
     data = matread("output/$dataset-temporal-perf-stats.mat")
     if full
@@ -12,8 +30,9 @@ function recovery_plots(dataset::String, full::Bool=false)
     
     close()
     figure(figsize=(16, 3.75))
-    subplot(131)
+
     # precision @ core size
+    subplot(131)
     plot(days, data["upb_pacs"], color="k",       lw=3.5,  linestyle="-",  label="upper bound")
     plot(days, data["mvc_pacs"], color="#1b9e77", lw=2,    linestyle="-",  label="UMVC")
     plot(days, data["deg_pacs"], color="#d95f02", lw=2,    linestyle=":",  label="Degree")
@@ -32,6 +51,7 @@ function recovery_plots(dataset::String, full::Bool=false)
     ylabel("Precision at core size", fontsize=fsz)
     title(dataset, fontsize=fsz)
 
+    # area under the precision-recall curve
     subplot(132)
     plot(days, data["upb_auprc"], color="k",       lw=3.5,  linestyle="-",  label="upper bound")
     plot(days, data["mvc_auprc"], color="#1b9e77", lw=2,    linestyle="-",  label="UMVC")
@@ -75,6 +95,19 @@ function recovery_plots(dataset::String, full::Bool=false)
     show()
 end
 
+""" 
+neighborhoods_plot
+------------------
+
+Makes a plot similar to those appearing in Figure 1 of the paper. This function
+relies on the file output/$dataset-neighborhood-stats.mat, which is produced
+with the neighborhoods_minimum_VC_bounds() function.
+
+neighborhoods_plot(dataset::String)
+
+Input parameters:
+- dataset::String: dataset name
+"""
 function neighborhoods_plot(dataset::String)
     close()
     data = matread("output/$dataset-neighborhood-stats.mat")
