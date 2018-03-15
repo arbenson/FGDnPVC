@@ -1,7 +1,7 @@
 include("common.jl")
 using LightGraphs
 
-function UMVC(A::SpIntMat, num_iters::Int64=300)
+function UMVC_order(A::SpIntMat, num_iters::Int64=300)
     edge_vec = [(i, j) for (i, j) in zip(findnz(A)[1:2]...) if i < j]
     n = size(A, 1)
     umvc_vec = zeros(Int64, n)
@@ -40,7 +40,7 @@ function degree_order(A::SpIntMat)
     return (sort(collect(1:n), by=v->d[v], rev=true), d)
 end
 
-function BorgattiEverett(A::SpIntMat, max_iter::Int64=10000, tol::Float64=1e-10)
+function BorgattiEverett_order(A::SpIntMat, max_iter::Int64=10000, tol::Float64=1e-10)
     n = size(A, 1)
     d = vec(sum(A, 2))
     c = rand(n)

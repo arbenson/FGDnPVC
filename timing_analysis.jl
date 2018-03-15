@@ -15,9 +15,9 @@ Input parameters:
 """
 function timing_experiment(dataset::String, alg::String)
     A = TemporalData2SimpleGraph(read_temporal_data(dataset))
-    if     alg == "degree";          @time degree_order(A)
-    elseif alg == "UMVC";            @time UMVC_order(A)
-    elseif alg == "betweenness";     @time betweenness_order(A)
-    elseif alg == "BorgattiEverett"; @time BorgattiEverett(A)
+    if     alg == "degree";          @time degree_order(A);
+    elseif alg == "UMVC";            @time UMVC_order(A);
+    elseif alg == "betweenness";     @time betweenness_order(A);
+    elseif alg == "BorgattiEverett"; @time BorgattiEverett_order(A);
     else throw("Unknown algorithm $alg"); end
 end
