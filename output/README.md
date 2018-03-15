@@ -1,0 +1,1 @@
+This directory contains output files that make it easier to plot things later.
