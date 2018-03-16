@@ -2,7 +2,7 @@
 
 This Julia software accompanies the following paper:
 
-- Found Graph Data and Planted Vertex covers.
+- Found Graph Data and Planted Vertex Covers.
   Austin R. Benson and Jon Kleinberg.
   In preparation, 2018.
 
@@ -12,9 +12,11 @@ This code is designed to reproduce the results in the paper as well as provide s
 
 Download the software and the email-Enron, email-W3C, call-Reality, and text-Reality datasets.
 
-```julia
-git clone
+```bash
+git clone https://github.com/arbenson/FGDnPVC
 ```
+
+The code is written in Julia. To run everything, you need LightGraphs.jl, MAT.jl, PyPlot.jl, MathProgBase.jl, Gurobi.jl, and ScikitLearn.jl.
 
 ### Figure 1: 1-hop neighborhoods covering 2-hop neighborhoods
 
@@ -54,7 +56,24 @@ summary_statistics("text-Reality")
 
 ### Figure 2: recovery performance experiments
 
+This reproduces results in Figure 2. Again, it is multi-threaded.
 
+```julia
+include("temporal_analysis.jl")
+# collect data
+recovery_over_time("text-Reality")  # --> output/text-Reality-temporal-perf-stats.mat
+
+# make plot
+include("paper_plots.jl")
+recovery_plots("text-Reality")  # --> text-Reality-temporal.eps
+```
+
+We used separate software for belief propagation and the Path-Core scores. The pre-computed values are stored in `output/dataset-temporal-perf-stats-FULL.mat`, where dataset is, e.g., email-Enron.
+
+```julia
+include("paper_plots.jl")
+recovery_plots("email-Enron", true)  # --> email-Enron-temporal-FULL.eps
+```
 
 ### Table 2: timing experiments
 
