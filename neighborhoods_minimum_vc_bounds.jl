@@ -114,7 +114,7 @@ Input parameters:
 - dataset::String: name of dataset
 - niter::Int64=20: number of interations of the maximal matching algorithm to use
 
-Writes output file output/$dataset-neighborhood-stats.mat.
+Writes output file output/dataset-neighborhood-stats.mat.
 """
 function neighborhoods_minimum_VC_bounds(dataset::String, niter::Int64=20)
     A = read_simple_graph_txt(dataset)[1]

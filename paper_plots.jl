@@ -33,15 +33,24 @@ function recovery_plots(dataset::String, full::Bool=false)
 
     # precision @ core size
     subplot(131)
-    plot(days, data["upb_pacs"], color="k",       lw=3.5,  linestyle="-",  label="upper bound")
-    plot(days, data["mvc_pacs"], color="#1b9e77", lw=2,    linestyle="-",  label="UMVC")
-    plot(days, data["deg_pacs"], color="#d95f02", lw=2,    linestyle=":",  label="Degree")
-    plot(days, data["btw_pacs"], color="#7570b3", lw=1.25, linestyle="-",  label="Betweenness")
+    upb_pacs = data["upb_pacs"]
+    # We can sometimes do better by chance in random orderings for early
+    # timestamps, so we enforce the upper bound.
+    mvc_pacs = min.(data["mvc_pacs"], upb_pacs)
+    deg_pacs = min.(data["deg_pacs"], upb_pacs)
+    btw_pacs = min.(data["btw_pacs"], upb_pacs)
+    bev_pacs = min.(data["bev_pacs"], upb_pacs)
+    plot(days, upb_pacs, color="k",       lw=3.5,  linestyle="-",  label="upper bound")
+    plot(days, mvc_pacs, color="#1b9e77", lw=2,    linestyle="-",  label="UMVC")
+    plot(days, deg_pacs, color="#d95f02", lw=2,    linestyle=":",  label="Degree")
+    plot(days, btw_pacs, color="#7570b3", lw=1.25, linestyle="-",  label="Betweenness")
     if full
-        plot(days, data["bpr_pacs"], color="#e6ab02", lw=0.75, linestyle=":",  label="BP")
-        plot(days, data["pcs_pacs"], color="#e7298a", lw=1.25, linestyle="--", label="PC")
+        bpr_pacs = min.(data["bpr_pacs"], upb_pacs)
+        pcs_pacs = min.(data["pcs_pacs"], upb_pacs)        
+        plot(days, bpr_pacs, color="#e6ab02", lw=0.75, linestyle=":",  label="BP")
+        plot(days, pcs_pacs, color="#e7298a", lw=1.25, linestyle="--", label="PC")
     end
-    plot(days, data["bev_pacs"], color="#66a61e", lw=1.5,  linestyle="-.", label="BE")
+    plot(days, bev_pacs, color="#66a61e", lw=1.5,  linestyle="-.", label="BE")
     ax = gca()    
     ax[:tick_params]("both", labelsize=fsz-3, length=4, width=1.25)
     if dataset == "email-Enron"
