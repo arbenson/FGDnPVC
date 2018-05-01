@@ -18,9 +18,9 @@ git clone https://github.com/arbenson/FGDnPVC
 
 The code is written in Julia. To run everything, you need LightGraphs.jl, MAT.jl, PyPlot.jl, MathProgBase.jl, Gurobi.jl, and ScikitLearn.jl.
 
-### Figure 1: 1-hop neighborhoods covering 2-hop neighborhoods
+### Figure 2: 1-hop neighborhoods covering 2-hop neighborhoods
 
-This code reproduces Figure 1, which shows improved bounds from the maximal matching 2-approximation algorithm for minimum vertex cover.
+This code reproduces Figure 2, which shows improved bounds from the maximal matching 2-approximation algorithm for minimum vertex cover.
 
 Note: this function is multithreaded, so you can run with, e.g., JULIA_NUM_THREADS=4 julia.
 
@@ -54,9 +54,9 @@ summary_statistics("call-Reality")
 summary_statistics("text-Reality")
 ```
 
-### Figure 2: recovery performance experiments
+### Figure 4: recovery performance experiments
 
-This reproduces results in Figure 2. Again, it is multi-threaded.
+This reproduces results in Figure 4. Again, it is multi-threaded.
 
 ```julia
 include("temporal_analysis.jl")
