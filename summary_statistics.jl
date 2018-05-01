@@ -81,12 +81,11 @@ function summary_statistics(dataset::String)
             end
         end
     end
-    counts = [0, 0]
+
+    in_interior = zeros(Int64, n)    
     for c in core
-        if core_connecting[c] == 1
-            counts[1] += 1
-        else
-            # Check if all neighbors of neighbors are in the core
+        if core_connecting[c] == 0
+            # Check if node is in the interior
             s = 0
             for j in nz_row_inds(A, c)
                 assert(core01[j] == 1)
@@ -95,10 +94,21 @@ function summary_statistics(dataset::String)
                     break
                 end
             end
-            if s == 0; counts[2] += 1; end
+            if s == 0
+                in_interior[c] = 1
+            end
         end
     end
-    counts /= length(core)
+
+    interior_connecting = zeros(Int64, n)
+    for c in core
+        if in_interior[c] == 1
+            for j in nz_row_inds(A, c)
+                interior_connecting[j] = 1
+            end
+            #interior_connecting[c] = 1
+        end
+    end
     nedges = nnz(A) / 2
 
     println("dataset & n & m & time span (days) & |C| & k* & Bound 1 & Bound 2 & fraction C connecting to periphery & fraction of C with 2-hop nbrhood in C")
@@ -111,6 +121,6 @@ function summary_statistics(dataset::String)
                      kstar,
                      ((k + 1)^2 / 4 + k) / nnodes,
                      (k - kstar + 2) * kstar / nnodes,
-                     counts[1],
-                     counts[2]))
+                     sum(core_connecting) / length(core),
+                     sum(interior_connecting) / length(core) ))
 end
