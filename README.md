@@ -4,9 +4,11 @@ This Julia software accompanies the following paper:
 
 - Found Graph Data and Planted Vertex Covers.
   Austin R. Benson and Jon Kleinberg.
-  In preparation, 2018.
+  [arXiv:1805.01209](https://arxiv.org/abs/1805.01209), 2018.
 
 This code is designed to reproduce the results in the paper as well as provide some basic code which could be used by others to test out their algorithms on planted vertex covers.
+
+The data used in the paper is also available [here](http://www.cs.cornell.edu/~arb/data/index.html#pvc).
 
 ### Setup
 
