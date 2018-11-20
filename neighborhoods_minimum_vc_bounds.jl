@@ -1,7 +1,9 @@
 include("common.jl")
 
 using Base.Threads
-using MAT
+using FileIO
+using JLD2
+using Random
 
 """
 read_simple_graph_txt
@@ -49,7 +51,7 @@ function read_simple_graph_txt(dataset::String)
     A = convert(SpIntMat, sparse(I, J, ones(length(I)), n, n))
     A = max.(A, A')
     A = min.(A, 1)
-    A -= spdiagm(diag(A))
+    A -= Diagonal(A)
     return (A, index_map_vec)
 end
 
@@ -61,7 +63,7 @@ Get approximation bounds from num_iters random initializations of the maximal
 matching 2-approximation for the minimum vertex cover problem on the undirected
 graph with adjacency matrix A.
 
-(u, l) = matching_approx_bounds(SpIntMat, num_iters::Int64=20)
+(u, l) = matching_approx_bounds(SpIntMat; num_iters::Int64=20)
 
 Input parameters:
 - SpIntMat: the adjacency matrix of an undirected graph
@@ -70,7 +72,7 @@ Input parameters:
 returns tuple of integers (u, l), which are the worst upper bound and best lower
 bound on the minimum vertex cover size.
 """
-function matching_approx_bounds(A::SpIntMat, num_iters::Int64=20)
+function matching_approx_bounds(A::SpIntMat; num_iters::Int64=20)
     edge_vec = [(i, j) for (i, j) in zip(findnz(A)[1:2]...) if i < j]
     n = size(A, 1)
     upper_bounds = Int64[]
@@ -87,7 +89,7 @@ function matching_approx_bounds(A::SpIntMat, num_iters::Int64=20)
         # Reduce to a minimal cover
         while true
             reduced = false
-            for c in shuffle(find(cover .== 1))
+            for c in shuffle(findall(cover .== 1))
                 nbrs = nz_row_inds(A, c)
                 if sum(cover[nbrs]) == length(nbrs)
                     cover[c] = 0
@@ -108,19 +110,19 @@ neighborhoods_minimum_VC_bounds
 Collect bounds on the minimum vertex cover size of 1-hop neighborhood covers of
 2-hop neighborhoods (ego excluded).
 
-neighborhoods_minimum_VC_bounds(dataset::String, niter::Int64=20)
+neighborhoods_minimum_VC_bounds(dataset::String; niter::Int64=20)
 
 Input parameters:
 - dataset::String: name of dataset
 - niter::Int64=20: number of interations of the maximal matching algorithm to use
 
-Writes output file output/dataset-neighborhood-stats.mat.
+Writes output file output/dataset-neighborhood-stats.jld2.
 """
-function neighborhoods_minimum_VC_bounds(dataset::String, niter::Int64=20)
+function neighborhoods_minimum_VC_bounds(dataset::String; niter::Int64=20)
     A = read_simple_graph_txt(dataset)[1]
 
     n = size(A, 2)
-    degs = vec(sum(A, 2))
+    degs = vec(sum(A, dims=2))
     N1_sizes = copy(degs)
     N2_sizes = zeros(Int64, n)
     counted  = zeros(Int64, n)
@@ -130,7 +132,7 @@ function neighborhoods_minimum_VC_bounds(dataset::String, niter::Int64=20)
     Threads.@threads for i = 1:n
         if Threads.threadid() == 1
             print("$(i) of $n \r")
-            flush(STDOUT)
+            flush(stdout)
         end
         nbrs = nz_row_inds(A, i)
         k = length(nbrs)
@@ -167,10 +169,10 @@ function neighborhoods_minimum_VC_bounds(dataset::String, niter::Int64=20)
         end
     end
 
-    matwrite("output/$dataset-neighborhood-stats.mat",
-             Dict("counted" => counted,
-                  "N1"      => N1_sizes,
-                  "N2"      => N2_sizes,
-                  "u"       => uvals,
-                  "l"       => lvals))
+    save("output/$dataset-neighborhood-stats.jld2",
+         Dict("counted" => counted,
+              "N1"      => N1_sizes,
+              "N2"      => N2_sizes,
+              "u"       => uvals,
+              "l"       => lvals))
 end

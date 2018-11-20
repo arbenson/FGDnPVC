@@ -1,7 +1,9 @@
 include("common.jl")
 
+using DelimitedFiles
 using MathProgBase
 using Gurobi
+using Printf
 
 """
 minimum_VC_size
@@ -62,11 +64,11 @@ function summary_statistics(dataset::String)
     TD =  read_temporal_data(dataset)
     total_days = convert(Int64, round((maximum(TD.times) - minimum(TD.times)) / 86400))
     A = TemporalData2SimpleGraph(TD)
-    degs = vec(sum(A, 2))
+    degs = vec(sum(A, dims=2))
     n = size(A, 1)
     nnodes = sum(degs .> 0)
     core01 = read_core(dataset, n)
-    core = find(core01 .== 1)
+    core = findall(core01 .== 1)
     k = sum(degs[core] .> 0)
     kstar = minimum_VC_size(A, k)
     kstar = minimum_VC_size(A::SpIntMat, k)
@@ -88,39 +90,34 @@ function summary_statistics(dataset::String)
             # Check if node is in the interior
             s = 0
             for j in nz_row_inds(A, c)
-                assert(core01[j] == 1)
+                if core01[j] != 1; throw(error("Core value should be 1")); end
                 if core_connecting[j] == 1
                     s += 1
                     break
                 end
             end
-            if s == 0
-                in_interior[c] = 1
-            end
+            if s == 0; in_interior[c] = 1; end
         end
     end
 
     interior_connecting = zeros(Int64, n)
     for c in core
         if in_interior[c] == 1
-            for j in nz_row_inds(A, c)
-                interior_connecting[j] = 1
-            end
-            #interior_connecting[c] = 1
+            interior_connecting[nz_row_inds(A, c)] .= 1
         end
     end
     nedges = nnz(A) / 2
 
     println("dataset & n & m & time span (days) & |C| & k* & Bound 1 & Bound 2 & fraction C connecting to periphery & fraction of C with 2-hop nbrhood in C")
-    println(@sprintf("%s & %d & %d & %d & %d & %d & %0.3f & %0.3f & %0.2f & %0.2f",
-                     dataset,
-                     nnodes,
-                     nedges,
-                     total_days,
-                     k,
-                     kstar,
-                     ((k + 1)^2 / 4 + k) / nnodes,
-                     (k - kstar + 2) * kstar / nnodes,
-                     sum(core_connecting) / length(core),
-                     sum(interior_connecting) / length(core) ))
+    @printf("%s & %d & %d & %d & %d & %d & %0.3f & %0.3f & %0.2f & %0.2f",
+            dataset,
+            nnodes,
+            nedges,
+            total_days,
+            k,
+            kstar,
+            ((k + 1)^2 / 4 + k) / nnodes,
+            (k - kstar + 2) * kstar / nnodes,
+            sum(core_connecting) / length(core),
+            sum(interior_connecting) / length(core))
 end
