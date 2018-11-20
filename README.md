@@ -2,9 +2,8 @@
 
 This Julia software accompanies the following paper:
 
-- Found Graph Data and Planted Vertex Covers.
-  Austin R. Benson and Jon Kleinberg.
-  [arXiv:1805.01209](https://arxiv.org/abs/1805.01209), 2018.
+- [Found Graph Data and Planted Vertex Covers](http://www.cs.cornell.edu/~arb/papers/fgd-pvc-NIPS-2018.pdf).
+  Austin R. Benson and Jon Kleinberg. In *Proceedings of Neural Information Processing (NeurIPS)*, 2018.
 
 This code is designed to reproduce the results in the paper as well as provide some basic code which could be used by others to test out their algorithms on planted vertex covers.
 
@@ -18,7 +17,19 @@ Download the software and the email-Enron, email-W3C, call-Reality, and text-Rea
 git clone https://github.com/arbenson/FGDnPVC
 ```
 
-The code is written in Julia. To run everything, you need LightGraphs.jl, MAT.jl, PyPlot.jl, MathProgBase.jl, Gurobi.jl, and ScikitLearn.jl.
+The code is written in Julia 1.0. To run everything, you need the following packages:
+
+```julia
+using Pkg
+Pkg.add("FileIO")
+Pkg.add("JLD2")
+Pkg.add("PyPlot")
+Pkg.add("MathProgBase")
+Pkg.add("Gurobi")
+Pkg.add("ScikitLearn")
+```
+
+Gurobi requires a license, which is free for academics and students. We only use the Gurobi library to find the minimum vertex cover size, so you can still run several parts of the code without it.
 
 ### Figure 2: 1-hop neighborhoods covering 2-hop neighborhoods
 
@@ -63,18 +74,18 @@ This reproduces results in Figure 4. Again, it is multi-threaded.
 ```julia
 include("temporal_analysis.jl")
 # collect data
-recovery_over_time("text-Reality")  # --> output/text-Reality-temporal-perf-stats.mat
+recovery_over_time("text-Reality")  # --> output/text-Reality-temporal-perf-stats.jld2
 
 # make plot
 include("paper_plots.jl")
 recovery_plots("text-Reality")  # --> text-Reality-temporal.eps
 ```
 
-We used separate software for belief propagation and the Path-Core scores. The pre-computed values are stored in `output/dataset-temporal-perf-stats-FULL.mat`, where dataset is, e.g., email-Enron.
+We used separate software for belief propagation and the Path-Core scores. The pre-computed values are stored in `output/dataset-temporal-perf-stats-FULL.jld2`, where dataset is, e.g., email-Enron.
 
 ```julia
 include("paper_plots.jl")
-recovery_plots("email-Enron", true)  # --> email-Enron-temporal-FULL.eps
+recovery_plots("email-Enron", full=true)  # --> email-Enron-temporal-FULL.eps
 ```
 
 ### Table 2: timing experiments
