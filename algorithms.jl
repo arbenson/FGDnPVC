@@ -33,7 +33,7 @@ function UMVC_order(A::SpIntMat, ncovers::Int64=300)
         # Reduce to a minimal cover
         while true
             reduced = false
-            for c in shuffle(find(cover .== 1))
+            for c in shuffle(findall(cover .== 1))
                 nbrs = nz_row_inds(A, c)
                 if sum(cover[nbrs]) == length(nbrs)
                     cover[c] = 0
@@ -42,13 +42,13 @@ function UMVC_order(A::SpIntMat, ncovers::Int64=300)
             end
             if !reduced; break; end
         end
-        umvc_vec[cover .== 1] = 1
+        umvc_vec[cover .== 1] .= 1
     end
 
     # Order and score the nodes
-    d = vec(sum(A, 2))  # degrees of nodes
-    return [sort(find(umvc_vec .== 1), by=v->d[v], rev=true);
-            sort(find(umvc_vec .== 0), by=v->d[v], rev=true)]
+    d = vec(sum(A, dims=2))  # degrees of nodes
+    return [sort(findall(umvc_vec .== 1), by=v->d[v], rev=true);
+            sort(findall(umvc_vec .== 0), by=v->d[v], rev=true)]
 end
 
 """
@@ -66,7 +66,7 @@ returns an (order, degree) tuple of the order of the nodes by decreasing
 degree along with the actual degrees.
 """
 function degree_order(A::SpIntMat)
-    d = vec(sum(A, 2))
+    d = vec(sum(A, dims=2))
     n = size(A, 1)
     return (sort(collect(1:n), by=v->d[v], rev=true), d)
 end
@@ -119,13 +119,13 @@ betweenness centrality score along with the actual core scores.
 function BorgattiEverett_order(A::SpIntMat, max_iter::Int64=10000,
                                tol::Float64=1e-10)
     n = size(A, 1)
-    d = vec(sum(A, 2))
+    d = vec(sum(A, dims=2))
     c = rand(n)
-    c[d .== 0] = 0
+    c[d .== 0] .= 0
     c /= norm(c, 2)
     for iter = 1:max_iter
         num = A * c
-        denom = sum(c .^ 2) - c .^ 2
+        denom = sum(c .^ 2) .- c .^ 2
         next_c = num ./ denom
         next_c /= norm(next_c, 2)
         diff = norm(next_c - c, 2)

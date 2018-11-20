@@ -1,4 +1,5 @@
-using MAT
+using FileIO
+using JLD2
 using PyPlot
 
 """ 
@@ -6,10 +7,10 @@ recovery_plots
 --------------
 
 Makes a plot similar to those appearing in Figure 2 of the paper. This function
-relies on the file output/dataset-temporal-perf-stats.mat, which is
+relies on the file output/dataset-temporal-perf-stats.jld2, which is
 produced with the recovery_over_time() function.
 
-recovery_plots(dataset::String, full::Bool=false)
+recovery_plots(dataset::String; full::Bool=false)
 
 Input parameters:
 - dataset::String: dataset name
@@ -19,10 +20,10 @@ Input parameters:
 Writes file dataset-temporal.eps if full is false or dataset-temporal-FULL.eps
 if full is set to true.
 """
-function recovery_plots(dataset::String, full::Bool=false)
+function recovery_plots(dataset::String; full::Bool=false)
     data = nothing
-    if full; data = matread("output/$dataset-temporal-perf-stats-FULL.mat")
-    else;    data = matread("output/$dataset-temporal-perf-stats.mat")
+    if full; data = load("output/$dataset-temporal-perf-stats-FULL.jld2")
+    else;    data = load("output/$dataset-temporal-perf-stats.jld2")
     end
     ps = data["ps"]
     days = cumsum(data["interval"] * ones(length(ps)))
@@ -112,7 +113,7 @@ neighborhoods_plot
 ------------------
 
 Makes a plot similar to those appearing in Figure 1 of the paper. This function
-relies on the file output/dataset-neighborhood-stats.mat, which is produced
+relies on the file output/dataset-neighborhood-stats.jld2, which is produced
 with the neighborhoods_minimum_VC_bounds() function.
 
 neighborhoods_plot(dataset::String)
@@ -124,7 +125,7 @@ Produces file dataset-neighborhoods.png.
 """
 function neighborhoods_plot(dataset::String)
     close()
-    data = matread("output/$dataset-neighborhood-stats.mat")
+    data = load("output/$dataset-neighborhood-stats.jld2")
     counted = data["counted"]
     keep = counted .== 1
     N1 = data["N1"][keep]
@@ -132,9 +133,9 @@ function neighborhoods_plot(dataset::String)
 
     u = data["u"][keep]
     l = data["l"][keep]
-    improved_bounds = max.(min.((N1 - u + 2) .* l, (N1 + 1).^2 / 4 + N1), N1)
+    improved_bounds = max.(min.((N1 - u .+ 2) .* l, (N1 .+ 1).^2 ./ 4 + N1), N1)
     x = collect(minimum(N1):maximum(N1))
-    x_ub = (x + 1).^2 / 4 + x
+    x_ub = (x .+ 1).^2 / 4 + x
 
     fsz=18
     plot(x, x_ub, color="k", lw=1.5, label="(k+1)^2 / 4 + k")
@@ -160,3 +161,4 @@ function neighborhoods_plot(dataset::String)
     savefig("$dataset-neighborhoods.png", dpi=500)
     show()
 end
+;

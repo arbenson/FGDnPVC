@@ -1,7 +1,11 @@
 include("algorithms.jl")
 
 using Base.Threads
-using MAT
+using DelimitedFiles
+using FileIO
+using JLD2
+using Random
+using Statistics
 
 using ScikitLearn
 @sk_import metrics: average_precision_score
@@ -27,13 +31,13 @@ Input parameters:
 stores results in output/dataset-temporal-perf-stats.mat
 """
 function recovery_over_time(dataset::String, interval_in_days::Int64=10)
-    srand(1234)  # for consistency
+    Random.seed!(1234)  # for consistency
     
     TD = read_temporal_data(dataset)
     A = TemporalData2SimpleGraph(TD)
     n = size(A, 1)
     core01 = read_core(dataset, n)
-    core = find(core01 .> 0)
+    core = findall(core01 .> 0)
     nc = length(core)
     
     total_days = (maximum(TD.times) - minimum(TD.times)) / 86400
@@ -57,17 +61,18 @@ function recovery_over_time(dataset::String, interval_in_days::Int64=10)
     all_bev_scores = zeros(Float64, length(core01), np)
 
     nedges = nnz(A) / 2
-    nnodes = sum(vec(sum(A, 2)) .> 0)
+    nnodes = sum(vec(sum(A, dims=2)) .> 0)
     frac_edges = zeros(Float64, np)
     frac_core  = zeros(Float64, np)
     frac_nodes = zeros(Float64, np)
     
-    Threads.@threads for ii = 1:length(shuffled_inds)
+    #Threads.@threads for ii = 1:length(shuffled_inds)
+    for ii = 1:length(shuffled_inds)
         i = shuffled_inds[ii]
         p = ps[i]
         if Threads.threadid() == 1
             print("$(ii) of $(np)... \r")
-            flush(STDOUT)
+            flush(stdout)
         end
         # Collect data and scores
         Ap = TemporalData2SimpleGraph(quantiled_data(TD, p), n)
@@ -76,7 +81,7 @@ function recovery_over_time(dataset::String, interval_in_days::Int64=10)
         mvc_scores = collect(length(mvc_order):-1:1)[sortperm(mvc_order)]
         btw_order, btw_scores = betweenness_order(Ap)
         bev_order, bev_scores = BorgattiEverett_order(Ap)
-        non_iso_core = core[find(d[core] .> 0)]
+        non_iso_core = core[findall(d[core] .> 0)]
 
         # precision @ core size
         end_ind = min(nc, size(Ap, 1))
@@ -90,7 +95,7 @@ function recovery_over_time(dataset::String, interval_in_days::Int64=10)
         # upper bound
         upb_scores = rand(Float64, n)
         mval = maximum(upb_scores)
-        upb_scores[non_iso_core] = mval * 10.0
+        upb_scores[non_iso_core] .= mval * 10.0
         deg_scores = convert(Vector{Float64}, d)
 
         # Store data to avoid threading issues
@@ -102,7 +107,7 @@ function recovery_over_time(dataset::String, interval_in_days::Int64=10)
 
         frac_edges[i] = (nnz(Ap) / 2) / nedges
         frac_core[i]  = length(non_iso_core) / nc
-        frac_nodes[i] = sum(vec(sum(Ap, 2)) .> 0) / nnodes
+        frac_nodes[i] = sum(vec(sum(Ap, dims=2)) .> 0) / nnodes
     end
 
     perf_deg_auprc = zeros(Float64, np)
@@ -123,23 +128,23 @@ function recovery_over_time(dataset::String, interval_in_days::Int64=10)
             average_precision_score(core01, all_upb_scores[:, i])
     end
 
-    matwrite("output/$dataset-temporal-perf-stats.mat",
-             Dict("ps"         => ps,
-                  "interval"   => interval_in_days,                  
-                  "frac_core"  => frac_core,
-                  "frac_nodes" => frac_nodes,
-                  "frac_edges" => frac_edges,
-                  "ncore"      => nc,
-                  "nedges"     => nedges,
-                  "nnodes"     => nnodes,
-                  "deg_auprc"  => perf_deg_auprc,
-                  "mvc_auprc"  => perf_mvc_auprc,
-                  "btw_auprc"  => perf_btw_auprc,                  
-                  "upb_auprc"  => perf_upb_auprc,
-                  "bev_auprc"  => perf_bev_auprc,
-                  "deg_pacs"   => perf_deg_pacs,
-                  "mvc_pacs"   => perf_mvc_pacs,
-                  "btw_pacs"   => perf_btw_pacs,
-                  "upb_pacs"   => perf_upb_pacs,
-                  "bev_pacs"   => perf_bev_pacs,))
+    save("output/$dataset-temporal-perf-stats.jld2",
+         Dict("ps"         => ps,
+              "interval"   => interval_in_days,                  
+              "frac_core"  => frac_core,
+              "frac_nodes" => frac_nodes,
+              "frac_edges" => frac_edges,
+              "ncore"      => nc,
+              "nedges"     => nedges,
+              "nnodes"     => nnodes,
+              "deg_auprc"  => perf_deg_auprc,
+              "mvc_auprc"  => perf_mvc_auprc,
+              "btw_auprc"  => perf_btw_auprc,                  
+              "upb_auprc"  => perf_upb_auprc,
+              "bev_auprc"  => perf_bev_auprc,
+              "deg_pacs"   => perf_deg_pacs,
+              "mvc_pacs"   => perf_mvc_pacs,
+              "btw_pacs"   => perf_btw_pacs,
+              "upb_pacs"   => perf_upb_pacs,
+              "bev_pacs"   => perf_bev_pacs,))
 end

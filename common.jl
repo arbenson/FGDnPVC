@@ -1,8 +1,11 @@
+using LinearAlgebra
+using SparseArrays
+
 const SpIntMat = SparseMatrixCSC{Int64,Int64}
 nz_row_inds(A::SpIntMat, ind::Int64) = A.rowval[A.colptr[ind]:(A.colptr[ind + 1] - 1)]
 nz_row_vals(A::SpIntMat, ind::Int64) = A.nzval[A.colptr[ind]:(A.colptr[ind + 1] - 1)]
 
-immutable TemporalData
+struct TemporalData
     sources::Vector{Int64}
     dests::Vector{Int64}
     times::Vector{Float64}
@@ -32,7 +35,7 @@ function TemporalData2SimpleGraph(data::TemporalData,
     A = convert(SpIntMat, sparse(I, J, ones(length(I)), n, n))
     A = max.(A, A')
     A = min.(A, 1)
-    A -= spdiagm(diag(A))
+    A -= Diagonal(A)
     return A
 end
 
@@ -84,7 +87,7 @@ function read_core(dataset::String, num_nodes::Int64)
     core = zeros(Int64, num_nodes)
     core_ids = convert(Vector{Int64},
                        readdlm("data/$dataset/core-$dataset.txt")[:, 1])
-    core[core_ids] = 1
+    core[core_ids] .= 1
     return core
 end
 
