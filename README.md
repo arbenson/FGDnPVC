@@ -23,6 +23,7 @@ The code is written in Julia 1.0. To run everything, you need the following pack
 using Pkg
 Pkg.add("FileIO")
 Pkg.add("JLD2")
+Pkg.add("LightGraphs")
 Pkg.add("PyPlot")
 Pkg.add("MathProgBase")
 Pkg.add("Gurobi")

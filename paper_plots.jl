@@ -27,13 +27,17 @@ function recovery_plots(dataset::String; full::Bool=false)
     end
     ps = data["ps"]
     days = cumsum(data["interval"] * ones(length(ps)))
-    fsz = 14
+    fsz = 17
+
+    # no type 3 fonts
+    PyPlot.matplotlib[:rc]("pdf", use14corefonts=true)
+    PyPlot.matplotlib[:rc]("text", usetex=true)
     
     close()
-    figure(figsize=(16, 3.75))
+    figure(figsize=(10.6, 3.75))
 
     # precision @ core size
-    subplot(131)
+    subplot(121)
     upb_pacs = data["upb_pacs"]
     # We can sometimes do better by chance in random orderings for early
     # timestamps, so we enforce the upper bound.
@@ -55,15 +59,15 @@ function recovery_plots(dataset::String; full::Bool=false)
     ax = gca()    
     ax[:tick_params]("both", labelsize=fsz-3, length=4, width=1.25)
     if dataset == "email-Enron"
-        legend(fontsize=fsz-2, frameon=false, bbox_to_anchor=(0.25, 0.3),
-               ncol=2, columnspacing=0.5, labelspacing=0.0)
+        legend(fontsize=fsz-2, frameon=false, bbox_to_anchor=(0.3, 0.4),
+               ncol=2, columnspacing=0.75, labelspacing=0.0)
     end
     xlabel("Days", fontsize=fsz)
     ylabel("Precision at core size", fontsize=fsz)
     title(dataset, fontsize=fsz)
 
     # area under the precision-recall curve
-    subplot(132)
+    subplot(122)
     plot(days, data["upb_auprc"], color="k",       lw=3.5,  linestyle="-",  label="upper bound")
     plot(days, data["mvc_auprc"], color="#1b9e77", lw=2,    linestyle="-",  label="UMVC")
     plot(days, data["deg_auprc"], color="#d95f02", lw=2,    linestyle=":",  label="Degree")
@@ -76,13 +80,14 @@ function recovery_plots(dataset::String; full::Bool=false)
     ax = gca()    
     ax[:tick_params]("both", labelsize=fsz-3, length=4, width=1.25)
     if dataset == "email-Enron"
-        legend(fontsize=fsz-2, frameon=false, bbox_to_anchor=(0.25, 0.3),
-               ncol=2, columnspacing=0.5, labelspacing=0.0)
+        legend(fontsize=fsz-2, frameon=false, bbox_to_anchor=(0.3, 0.4),
+               ncol=2, columnspacing=0.75, labelspacing=0.0)
     end
     xlabel("Days", fontsize=fsz)
     ylabel("Area under P-R curve", fontsize=fsz)
     title(dataset, fontsize=fsz)
 
+    #=
     # Network statistics
     subplot(133)
     core_present = data["frac_core"] * data["ncore"]
@@ -100,6 +105,7 @@ function recovery_plots(dataset::String; full::Bool=false)
     xlabel("Days", fontsize=fsz)
     ylabel("Fraction", fontsize=fsz)
     title("$dataset", fontsize=fsz)
+    =#
 
     tight_layout()
     if   full; savefig("$dataset-temporal-FULL.eps")
